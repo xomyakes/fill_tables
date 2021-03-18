@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "fill_tables"
+version = "0.1.0"
+description = ""
+authors = ["Xoma <xomyakes@gmail.com>"]
+packages = [
+  { include = "fill_tables" },
+]
+
+[tool.poetry.scripts]
+fill_tables = "fill_tables.scripts.fill_tables:main"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
