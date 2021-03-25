@@ -1,11 +1,12 @@
 import os
 import openpyxl
 import pandas as pd
-#import gspread
+import requests
 import google.auth
 from google.oauth2 import service_account
 from gspread_pandas import Spread, Client 
 
+#Основная функция 
 def main():
     print('Fill tables greets u!')
     fill_table()
@@ -23,21 +24,18 @@ def load_reports():
     return reports
 # Функция заполнения таблиц
 def fill_table():
-
-    '''
-    gc = gspread.service_account() # Вход в аккаунт гугл бота
-    table = gc.open('PnL New') # Открываем гугл-таблицу
-    '''
-    table = Spread('PnL New')
-
-    print("Successfull authorized")
+    try:
+        table = Spread('PnL New')
+        print("Successfull authorized")
+    except requests.exceptions.RequestException:
+        print("Can't connect to Google API")
+        raise SystemExit()
     reports = load_reports()
     for report in reports:
-        #fill_month(table,report)
-        #fill_Pertrader_month(table,report)
+        fill_month(table,report)
+        fill_Pertrader_month(table,report)
         fill_balances(table,report)
-    #print('Tables loaded')
-    #print("Table filled")
+    print("Table filled")
 # Заполнение листа месяца
 def fill_month(table,report):
     sheet_month = table.worksheet(get_month_from_numbers(report.month) + ' ' + report.year)
@@ -84,10 +82,36 @@ def fill_Pertrader_month(table,report):
 
     # Заполнение таблицы
     table.update_cells((first_filling_row,first_filling_col),(last_filling_row,last_filling_col),list(flat_copied_range),sheet_PerTrader)
-
 #Заполнение листа балансов
 def fill_balances(table,report):
-    sheet_balances = table.worksheet('Balances')
+
+    #Определение диапазона копируемых ячеек
+    print('Works on Balances sheet')
+    report_sheet = report.workbook.get_sheet_by_name('Balances')
+    first_report_row = 2
+    first_report_col = 1
+    last_report_row = report_sheet.max_row
+    last_report_col = first_report_col + 5
+    copied_range_str = range_to_a1(first_report_row, first_report_col, last_report_row, last_report_col)
+    copied_range = report_sheet[number_to_fucking_a1(first_report_col) + str(first_report_row):number_to_fucking_a1(last_report_col) + str(last_report_row)]
+    flat_copied_range = []
+    for tup in copied_range:
+        for t in tup:
+            flat_copied_range.append(t.value)
+
+    #Определение диапазона заполняемых ячеек
+    sheet_Balances = table.find_sheet('Balances')
+    first_filling_col = 1
+    session_column = sheet_Balances.col_values(first_filling_col)
+    first_filling_row = len(session_column) + 1
+    last_filling_col = first_filling_col + last_report_col - first_report_col
+    last_filling_row = first_filling_row + last_report_row - first_report_row
+    filling_range = range_to_a1(first_filling_row, first_filling_col, last_filling_row, last_filling_col)
+    print('Copying {} from report_sheet to {} in PerTrader_sheet.'.format(copied_range_str,filling_range))
+
+    # Заполнение таблицы
+    table.update_cells((first_filling_row,first_filling_col),(last_filling_row,last_filling_col),list(flat_copied_range),sheet_Balances)
+
     print('Balances filled')
 #Вспомогательная функция разбиения имени отчёта, для получения инфы по нему
 def parse_report_name(report_file):
@@ -116,6 +140,7 @@ class Report():
         self.workbook = workbook
     def get_date(self):
         return str(self.year + '.' + self.month + '.' + self.day)
+#Получение строки месяца по числу
 def get_month_from_numbers(number):
     numbers_to_string_month = {
         '01' : 'January',
@@ -132,6 +157,7 @@ def get_month_from_numbers(number):
         '12' : 'December'
     }
     return numbers_to_string_month[number]
+#Поиск первой пустой строки в таблице
 def get_empty_raw(session_col):
     str_list = filter(None,session_col)
     return len(str_list) + 1
@@ -174,8 +200,8 @@ def number_to_fucking_a1(number):
     return a1_notation
 # Преобразование диапазона ячеек к А1 нотации
 def range_to_a1(first_row, first_col, last_row, last_col):
-    start = number_to_fucking_a1(first_col) + str(first_row)
-    end = number_to_fucking_a1(last_col) + str(last_row)
+    #start = number_to_fucking_a1(first_col) + str(first_row)
+    #end = number_to_fucking_a1(last_col) + str(last_row)
     range = number_to_fucking_a1(first_col) + str(first_row) + ':' + number_to_fucking_a1(last_col) + str(last_row)
     return range
 if __name__ == '__main__':
