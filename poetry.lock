@@ -96,6 +96,17 @@ google-auth = ">=1.12.0"
 google-auth-oauthlib = ">=0.4.1"
 
 [[package]]
+name = "gspread-formatting"
+version = "0.3.7"
+description = "Complete Google Sheets formatting support for gspread worksheets"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+gspread = ">=3.0.0"
+
+[[package]]
 name = "gspread-pandas"
 version = "2.3.0"
 description = "A package to easily open an instance of a Google spreadsheet and interact with worksheets through Pandas DataFrames."
@@ -295,7 +306,7 @@ brotli = ["brotlipy (>=0.6.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "3eb55792a9c9c1745120c68cde54173c99350c02e3bd9c3cfff1bd02ef4fd455"
+content-hash = "3ff7facbf0025b6bfbe1f6e80f6dceba4430dfb65b17893461eb64eb21f0ab8b"
 
 [metadata.files]
 apiclient = [
@@ -331,6 +342,10 @@ google-auth-oauthlib = [
 gspread = [
     {file = "gspread-3.7.0-py3-none-any.whl", hash = "sha256:056ceb9fb4f439c15ec39d84c91653c6435f775a1c8afc8fe7f909f8393821fb"},
     {file = "gspread-3.7.0.tar.gz", hash = "sha256:4bda4ab8c5edb9e41cf4ae40d4d5fb30447522b4e43608e05c01351ab1b96912"},
+]
+gspread-formatting = [
+    {file = "gspread-formatting-0.3.7.tar.gz", hash = "sha256:1c40f82c43a79fa0fe3eac367c79ac37f289465988d53109f015a1ccb57dabda"},
+    {file = "gspread_formatting-0.3.7-py2.py3-none-any.whl", hash = "sha256:16ca064b849d8f0aa593eb913d7b7c8b5209927d0a7099d9e44e68e062dd8f62"},
 ]
 gspread-pandas = [
     {file = "gspread_pandas-2.3.0-py2.py3-none-any.whl", hash = "sha256:588275a4eadf3ec4f66ed243f90903a4bb5ec608f0b25c22e1984f12228c4395"},

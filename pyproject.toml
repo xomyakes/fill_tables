@@ -19,6 +19,7 @@ gspread = "^3.7.0"
 google-auth = "^1.28.0"
 pandas = "^1.2.3"
 gspread-pandas = "^2.3.0"
+gspread-formatting = "^0.3.7"
 
 [tool.poetry.dev-dependencies]
 
