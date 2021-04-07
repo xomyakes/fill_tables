@@ -4,6 +4,9 @@ import pandas as pd
 import gspread
 import requests
 import google.auth
+import subprocess
+import datetime
+from datetime import date
 from google.oauth2 import service_account
 from gspread_pandas import Spread, Client 
 from gspread_formatting import *
@@ -15,8 +18,7 @@ def main():
 # Функция заполнения таблиц
 def fill_table():
     try:
-        #table = Spread('PnL New')
-        table = Spread("https://docs.google.com/spreadsheets/d/1nXYmAIztT0Zm_wOZf9GYPR_fYHsBxGeXGc3buMv1flg/edit#gid=0")
+        table = Spread("PnL New",create_spread=False)
         print("Successfull authorized")
     except requests.exceptions.RequestException:
         print("Can't connect to Google API")
@@ -24,9 +26,9 @@ def fill_table():
     reports = load_reports()
     for report in reports:
         print('Working with {}'.format(report.burse))
-        #fill_month(table,report)
-        #fill_Pertrader_month(table,report)
-        #fill_balances(table,report)
+        fill_month(table,report)
+        fill_Pertrader_month(table,report)
+        fill_balances(table,report)
     check(table,report)
     print("Table filled")
 # Функция загрузки отчётов из таблиц
@@ -35,7 +37,6 @@ def load_reports():
     reports_counter = 0
     reports_folder = os.listdir(os.getcwd() + '/reports')
     for report_file in reports_folder:
-        #if report_file[0] != '.':
         if report_file.find('result.xlsx') != -1:
             try:
                 workbook = openpyxl.load_workbook(filename = "./reports/" + report_file)
@@ -68,10 +69,11 @@ def fill_month(table,report):
     else:
         first_filling_col = sheet_month.find(report.burse + ' Night').col 
     last_filling_col = first_filling_col + last_report_col - first_report_col
-    
-    table.update_cells((filling_row,first_filling_col),(filling_row,last_filling_col),list(flat_copied_row),sheet_month)
-
-    print('Month sheet of {} succesfull filled'.format(report.burse))
+    try:
+        table.update_cells((filling_row,first_filling_col),(filling_row,last_filling_col),list(flat_copied_row),sheet_month)
+    except requests.exceptions.RequestException:
+        print("Cant fill cell range in Month sheet")
+    print('Month sheet of {} succesfully filled'.format(report.burse))
 #Заполнение листа трейдеров
 def fill_Pertrader_month(table,report):
 
@@ -99,8 +101,10 @@ def fill_Pertrader_month(table,report):
     #print('Copiing to range {}{}:{}{}'.format(number_to_fucking_a1(first_filling_col),first_filling_row,number_to_fucking_a1(last_filling_col - 1),last_filling_row - 1))
     
     #Заполнение таблицы
-    table.update_cells((first_filling_row,first_filling_col),(last_filling_row,last_filling_col),list(flat_copied_range),sheet_PerTrader)
-    
+    try:
+        table.update_cells((first_filling_row,first_filling_col),(last_filling_row,last_filling_col),list(flat_copied_range),sheet_PerTrader)
+    except requests.exceptions.RequestException:
+        print("Cant fill cell range in Per_Trader sheet")
 
     #Форматирование заполненного диапазона
     col_counter = first_filling_col
@@ -108,7 +112,7 @@ def fill_Pertrader_month(table,report):
         fmt = get_effective_format(sheet_PerTrader,number_to_fucking_a1(col_counter) + str(first_filling_row-1))
         format_cell_range(sheet_PerTrader, '{}{}:{}{}'.format(number_to_fucking_a1(col_counter),str(first_filling_row),number_to_fucking_a1(col_counter),str(last_filling_row)),fmt)
         col_counter += 1
-    print('PerTrader sheet of {} successfuly filled'.format(report.burse))
+    print('PerTrader sheet of {} successfully filled'.format(report.burse))
 #Заполнение листа балансов
 def fill_balances(table,report):
 
@@ -133,7 +137,10 @@ def fill_balances(table,report):
     last_filling_row = first_filling_row + last_report_row - first_report_row
     
     # Заполнение таблицы
-    table.update_cells((first_filling_row,first_filling_col),(last_filling_row,last_filling_col),list(flat_copied_range),sheet_Balances)
+    try:
+        table.update_cells((first_filling_row,first_filling_col),(last_filling_row,last_filling_col),list(flat_copied_range),sheet_Balances)
+    except requests.exceptions.RequestException:
+        print("Cant fill cell range in Balances sheet")
     col_counter = first_filling_col
     while col_counter <= last_filling_col:
         fmt = get_effective_format(sheet_Balances,number_to_fucking_a1(col_counter) + str(first_filling_row - 1))
@@ -142,7 +149,7 @@ def fill_balances(table,report):
         #print('Formatting {}{}:{}{}'.format(number_to_fucking_a1(col_counter),str(first_filling_row),number_to_fucking_a1(col_counter),str(last_filling_row)))
         format_cell_range(sheet_Balances, '{}{}:{}{}'.format(number_to_fucking_a1(col_counter), str(first_filling_row), number_to_fucking_a1(col_counter), str(last_filling_row)), fmt)
         col_counter += 1
-    print('Balances sheet of {} successfuly filled'.format(report.burse))
+    print('Balances sheet of {} successfully filled'.format(report.burse))
 #Вспомогательная функция разбиения имени отчёта, для получения инфы по нему
 def parse_report_name(report_file):
     try:
@@ -237,6 +244,7 @@ def range_to_a1(first_row, first_col, last_row, last_col):
     #end = number_to_fucking_a1(last_col) + str(last_row)
     range = number_to_fucking_a1(first_col) + str(first_row) + ':' + number_to_fucking_a1(last_col) + str(last_row)
     return range
+# Функция проверки значения Check и Double Check
 def check(table, report):
     summary_sheet = table.find_sheet('Summary_' + str(get_month_from_numbers(report.month)[0:3]))
     check_value = summary_sheet.cell(summary_sheet.find('Check').row,summary_sheet.find('Check').col + 1).value
@@ -246,5 +254,6 @@ def check(table, report):
         print('WARNING!!! Check is ' + check_value)
     if abs(float(double_check_value.replace(',','.'))) >= 10:
         print('WARNING!!! Double Check is ' + double_check_value)
+
 if __name__ == '__main__':
     main()
